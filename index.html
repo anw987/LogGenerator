@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Log Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+
+<h2>Payment Log Summary</h2>
+
+<table id="table">
+    <thead>
+        <tr>
+            <th>Time Window</th>
+            <th>Total</th>
+            <th>Success</th>
+            <th>Failure</th>
+            <th>Success Rate (%)</th>
+            <th>Error Breakdown</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+fetch('summary.json')
+    .then(res => res.json())
+    .then(data => {
+
+        const tbody = document.querySelector("#table tbody");
+
+        data.windows.forEach(w => {
+
+            let errorStr = "";
+            for (let key in w.errors) {
+                errorStr += key + "=" + w.errors[key] + " ";
+            }
+
+            const row = `
+                <tr>
+                    <td>${w.start}</td>
+                    <td>${w.total}</td>
+                    <td>${w.success}</td>
+                    <td>${w.failure}</td>
+                    <td>${w.successRate}</td>
+                    <td>${errorStr}</td>
+                </tr>
+            `;
+
+            tbody.innerHTML += row;
+        });
+    })
+    .catch(err => {
+        document.body.innerHTML += "<p style='color:red'>Failed to load summary.json</p>";
+        console.error(err);
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SLO Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #f4f4f4; }
+
+        .good { color: green; font-weight: bold; }
+        .warn { color: orange; font-weight: bold; }
+        .bad  { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>SLO Dashboard</h1>
+
+<div id="summary"></div>
+
+<h2>Time-Based Budget</h2>
+<div id="time"></div>
+
+<h2>Window Details</h2>
+<table>
+<thead>
+<tr>
+    <th>Time</th>
+    <th>Total</th>
+    <th>Success</th>
+    <th>Failure</th>
+    <th>Success Rate</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+
+<script>
+fetch('sloreport.json')
+.then(res => res.json())
+.then(data => {
+
+    const s = data.summary;
+    const t = data.time;
+
+    // STATUS
+    let status = "";
+    let cls = "";
+
+    if (s.compliance == 100) {
+        status = "HEALTHY";
+        cls = "good";
+    } else if (s.compliance >= 95) {
+        status = "AT RISK";
+        cls = "warn";
+    } else {
+        status = "BREACHED";
+        cls = "bad";
+    }
+
+    document.getElementById("summary").innerHTML = `
+        <h2 class="${cls}">${status}</h2>
+
+        <b>SLO Target:</b> ${s.sloTarget}%<br>
+        <b>Compliance:</b> ${s.compliance}%<br>
+        <b>Average Success Rate:</b> ${s.averageSuccessRate}%<br>
+        <b>Burn Rate:</b> ${s.burnRate}<br><br>
+
+        <b>Error Budget:</b> ${s.errorBudget}%<br>
+        <b>Budget Used:</b> <span class="${s.errorBudgetUsed > 100 ? 'bad':'warn'}">${s.errorBudgetUsed}%</span><br>
+        <b>Remaining:</b> <span class="${s.errorBudgetRemaining < 0 ? 'bad':'good'}">${s.errorBudgetRemaining}%</span>
+    `;
+
+    document.getElementById("time").innerHTML = `
+        <b>Total Time:</b> ${t.totalMinutes} minutes<br>
+        <b>Error Budget:</b> ${t.errorBudgetMinutes} minutes<br>
+        <b>Consumed:</b> ${t.errorConsumedMinutes} minutes<br>
+        <b>Remaining:</b> <span class="${t.remainingMinutes < 0 ? 'bad':'good'}">${t.remainingMinutes} minutes</span><br>
+        <b>Time to Exhaust:</b> ${t.minutesToExhaust} minutes
+    `;
+
+    const tbody = document.getElementById("table");
+
+    data.windows.forEach(w => {
+
+        let rowClass = w.successRate >= s.sloTarget ? "good" : "bad";
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${w.start}</td>
+                <td>${w.total}</td>
+                <td>${w.success}</td>
+                <td>${w.failure}</td>
+                <td class="${rowClass}">${w.successRate}%</td>
+            </tr>
+        `;
+    });
+
+});
+</script>
+
+</body>
+</html>
